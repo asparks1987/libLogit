@@ -1,0 +1,6 @@
+README.md
+setup.py
+libLogit.egg-info/PKG-INFO
+libLogit.egg-info/SOURCES.txt
+libLogit.egg-info/dependency_links.txt
+libLogit.egg-info/top_level.txt
