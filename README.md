@@ -1,51 +1,80 @@
-# libLogit
+# Python Logging Configuration
 
-libLogit is a lightweight C++ logging library that allows you to easily log messages to a file with different log levels. It provides a flexible and convenient way to manage logs in your applications.
+This Python script provides a simple logging configuration with configurable options. It includes a class `LOG` that facilitates logging messages with different log levels, and a class `LogConfig` to set up the logging configuration.
 
-## Features
+## Table of Contents
 
-- Four log levels: DEBUG, INFO, WARN, ERROR
-- Customizable log configuration
-- Easy-to-use interface for logging messages
-- Robust error handling
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Examples](#examples)
 
-## Getting Started
+## Installation
 
-### Prerequisites
+No specific installation is required. Simply include the provided script in your project, and you can start using the logging functionality.
 
-- C++11 or above
-- A C++ compiler
+## Usage
 
-### Usage
+To use the logging functionality in your Python script, follow these steps:
 
-1. Include the `liblog.h` header file in your C++ project:
+1. Import the script:
 
-```cpp
-#include "liblog.h"
-To configure the log settings, modify the LOGCFG instance of the LogConfig struct:
-LOGCFG.level = LogLevel::DEBUG;              // Set the desired log level
-LOGCFG.outputFile = "application.log";       // Set the log file name
-LOGCFG.headers = true;                       // Enable or disable headers in the log file
-Instantiate a LOG object to start logging:
-LOG logInstance("mylog.log");                 // Create a LOG instance with a custom log file name
-logInstance << "This is a log message.";      // Log a message using the default log level (DEBUG)
-Alternatively, you can specify the log level when instantiating a LOG object:
-LOG logInstance(LogLevel::INFO);              // Create a LOG instance with a specific log level
-logInstance << "This is an informational message.";  // Log an INFO level message
-Log Levels
-libLogit supports the following log levels:
+    from logit import LOG, LogConfig
+    ```
 
-DEBUG: Detailed debug information.
-INFO: General information about the application's execution.
-WARN: Warnings that may indicate potential issues.
-ERROR: Error messages indicating critical errors in the application.
-By default, the log level is set to DEBUG. You can modify the log level in the LOGCFG instance to control the verbosity of the logs.
+2. Create a `LogConfig` instance with desired configurations:
 
-Error Handling
-The library provides robust error handling. The LOG constructor and operator<< overload may throw a std::runtime_error if they encounter an error while opening the log file. Make sure to handle exceptions appropriately in your code.
+    log_config = LogConfig(headers=True, level='INFO', outputFile='MyLog.log')
+    ```
 
-Contributing
-Contributions to libLogit are welcome! If you find any issues or have suggestions for improvements, feel free to open an issue or submit a pull request.
+3. Create a `LOG` instance with the `LogConfig`:
 
-License
-libLogit is released under the MIT License. See the LICENSE file for details.
+    ```python
+    logger = LOG(log_config)
+    ```
+
+4. Log messages using the `log` method:
+
+    ```python
+    logger.log('INFO', 'This is an informational message.')
+    ```
+
+## Configuration
+
+### LogConfig Class
+
+The `LogConfig` class is used to configure the logging settings. It has the following parameters:
+
+- `headers`: Boolean (default: `False`) - Whether to include headers in the log messages.
+- `level`: String (default: `'DEBUG'`) - The logging level. Valid values are `'DEBUG'`, `'INFO'`, `'WARN'`, and `'ERROR'`.
+- `outputFile`: String (default: `'Default.log'`) - The name of the log file where the messages will be stored.
+
+### LOG Class
+
+The `LOG` class is responsible for initializing the logging system and providing the `log` method to log messages. It takes a `LogConfig` instance as its configuration.
+
+## Examples
+
+### Example 1: Basic Logging
+
+```python
+from logger import LOG, LogConfig
+
+# Configure logging with default settings
+log_config = LogConfig()
+logger = LOG(log_config)
+
+# Log a message
+logger.log('INFO', 'This is an informational message.')
+Example 2: Custom Configuration
+python
+Copy code
+from logger import LOG, LogConfig
+
+# Configure logging with custom settings
+log_config = LogConfig(headers=True, level='WARN', outputFile='CustomLog.log')
+logger = LOG(log_config)
+
+# Log a warning message
+logger.log('WARN', 'This is a warning message.')
+Feel free to customize the LogConfig parameters to suit your project's logging requirements.
