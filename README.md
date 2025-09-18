@@ -45,13 +45,13 @@ Refer to `docs/burndown.md` and `docs/issue-backlog.md` for the broader multi-ph
 - `file_location` (string or null): append-only file path; omitted/null disables file logging.
 - `network_file_location` (string or null): optional secondary path (e.g., network share). Future work will expand this to remote transports.
 
-## Example Usage
+## Python Quick Start
 ```python
-from libLogit import init_from_config, LOG
+from libLogit import init_from_config, LOG, ENDL
 
 init_from_config("logit.json")
-LOG("info") << "Boot sequence started"
-LOG("error") << "Subsystem failure"
+LOG("info") << "Boot sequence started" << ENDL
+LOG("error") << "Subsystem failure" << ENDL
 ```
 
 ```cpp
@@ -81,3 +81,7 @@ Further examples for Kotlin and Ada live under `languages/`.
 
 ## Current Status
 Phase 1 scaffolding is underway. The shared JSON schema, Python implementation, and multi-language skeletons are being built out to honour the simplified configuration contract.
+
+## Development
+- Install dependencies: `pip install -e .` (use a virtual env).
+- Run unit tests: `pytest`.

@@ -7,6 +7,7 @@ setup(
     author='Aryn M. Sparks',
     author_email='Aryn.sparks1987@gmail.com',
     description='A simple logging library in python',
-    packages=find_packages(),    
+    packages=find_packages(include=['liblogit', 'liblogit.*']),    
     install_requires=[],
+    python_requires='>=3.9',
 )
