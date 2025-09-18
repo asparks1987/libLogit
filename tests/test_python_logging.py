@@ -1,7 +1,6 @@
 """Unit tests for the liblogit Python API."""
 
 import json
-import logging
 from pathlib import Path
 
 import pytest
@@ -60,7 +59,7 @@ def test_missing_level_raises(tmp_path):
         liblogit.init_from_config(cfg_path)
 
 
-def test_file_handler_fallback(monkeypatch, tmp_path, caplog):
+def test_file_handler_fallback(monkeypatch, tmp_path, capsys):
     """Logger should warn and continue when file handlers cannot be attached."""
 
     config = {
@@ -74,10 +73,31 @@ def test_file_handler_fallback(monkeypatch, tmp_path, caplog):
     def boom(*_args, **_kwargs):
         raise OSError("disk full")
 
-    caplog.set_level(logging.WARNING, logger="liblogit")
     monkeypatch.setattr(liblogit.logging, "FileHandler", boom)
 
     liblogit.init_from_config(cfg_path)
     liblogit.LOG("info") << "still works" << liblogit.ENDL
 
-    assert "Unable to attach file logger" in caplog.text
+    captured = capsys.readouterr()
+    assert "Unable to attach file logger" in captured.err
+    assert "still works" in captured.err
+
+
+def test_copy_sample_config_into_directory(tmp_path):
+    sample_path = liblogit.copy_sample_config(tmp_path)
+    assert sample_path == tmp_path / "logit.sample.json"
+
+    data = json.loads(sample_path.read_text(encoding="utf-8"))
+    assert data["level"]["threshold"] == "info"
+
+
+def test_copy_sample_config_overwrite(tmp_path):
+    target = tmp_path / "logit.sample.json"
+    target.write_text("{}", encoding="utf-8")
+
+    with pytest.raises(FileExistsError):
+        liblogit.copy_sample_config(target)
+
+    updated = liblogit.copy_sample_config(target, overwrite=True)
+    assert updated == target
+    assert json.loads(updated.read_text(encoding="utf-8"))["timestamp"] is True

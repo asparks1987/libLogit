@@ -11,7 +11,8 @@ Usage example::
     LOG("warn") << {"event": "calibration"} << ENDL
 
 The configuration format is intentionally minimal and documented in
-docs/configuration.md and the sample logit.sample.json file.
+docs/configuration.md. A sample logit.sample.json ships with the package and
+can be copied into a project directory via :func:`copy_sample_config`.
 """
 
 from __future__ import annotations
@@ -25,8 +26,20 @@ from logging.handlers import SocketHandler
 from pathlib import Path as _Path
 from typing import Any, Dict, Iterable, Iterator, Optional
 from urllib.parse import urlparse
+from importlib import resources
 
-__all__ = ["init_from_config", "LOG", "ENDL", "LogConfigurationError"]
+__version__ = "0.1.0"
+
+__all__ = [
+    "init_from_config",
+    "LOG",
+    "ENDL",
+    "LogConfigurationError",
+    "copy_sample_config",
+    "__version__",
+]
+
+_SAMPLE_FILENAME = "logit.sample.json"
 
 
 LEVEL_MAP: Dict[str, int] = {
@@ -314,3 +327,35 @@ def _stringify(value: Any) -> str:
         except TypeError:
             pass
     return str(value)
+
+
+def copy_sample_config(target: str | _Path, *, overwrite: bool = False) -> _Path:
+    """Copy the bundled sample configuration to *target* and return the final path.
+
+    If *target* is a directory (existing or not) the file is written as
+    ``logit.sample.json`` within that directory. When *target* looks like a JSON
+    file path, the sample is written directly to that location instead. Existing
+    files are preserved unless ``overwrite`` is True.
+    """
+
+    destination = _Path(target)
+
+    if destination.suffix.lower() == ".json" or destination.is_file():
+        target_file = destination
+    else:
+        if destination.exists() and not destination.is_dir():
+            raise NotADirectoryError(f"Cannot copy sample config into non-directory: {destination}")
+        destination.mkdir(parents=True, exist_ok=True)
+        target_file = destination / _SAMPLE_FILENAME
+
+    if target_file.exists() and not overwrite:
+        raise FileExistsError(f"Refusing to overwrite existing file: {target_file}")
+
+    try:
+        sample_bytes = resources.files(__package__).joinpath("data").joinpath(_SAMPLE_FILENAME).read_bytes()
+    except FileNotFoundError as exc:  # pragma: no cover - defensive path
+        raise RuntimeError("Bundled liblogit sample configuration is missing") from exc
+
+    target_file.parent.mkdir(parents=True, exist_ok=True)
+    target_file.write_bytes(sample_bytes)
+    return target_file

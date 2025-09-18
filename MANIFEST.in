@@ -1,0 +1,4 @@
+include README.md
+recursive-include docs *.md
+recursive-include schema *.json
+recursive-include liblogit/data *.json

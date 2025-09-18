@@ -30,6 +30,18 @@ libLogit is a rich, multi-language logging helper library that delivers a unifie
 ### Future Phases
 Refer to `docs/burndown.md` and `docs/issue-backlog.md` for the broader multi-phase roadmap, including advanced sinks, remote transport, and full multi-language releases.
 
+## Installation
+- Stable releases: `pip install liblogit`
+- Latest main: `pip install git+https://github.com/asparks1987/libLogit.git`
+- Compatibility shims expose both `import liblogit` (preferred) and `import libLogit` for legacy consumers.
+- Bootstrap a starter configuration by copying the bundled sample into your project:
+
+```python
+from liblogit import copy_sample_config
+
+copy_sample_config(".")
+```
+
 ## Configuration
 ```json
 {

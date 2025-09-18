@@ -1,13 +1,10 @@
-from setuptools import setup, find_packages
+"""Shim to support ``python setup.py`` invocations.
 
-setup(
-    name='libLogit',
-    version='0.0.1a', 
-    url='https://github.com/asparks1987/libLogit.git',
-    author='Aryn M. Sparks',
-    author_email='Aryn.sparks1987@gmail.com',
-    description='JSON-configured multi-sink logging helpers',
-    packages=find_packages(include=['liblogit', 'liblogit.*']),    
-    install_requires=[],
-    python_requires='>=3.9',
-)
+The project metadata lives in ``setup.cfg`` and ``pyproject.toml``.
+"""
+
+from setuptools import setup
+
+
+if __name__ == "__main__":
+    setup()

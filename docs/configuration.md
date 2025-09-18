@@ -2,6 +2,10 @@
 
 The libLogit configuration is a compact JSON document that all language bindings load. Phase 1 constrains the file to four top-level fields so behaviour stays consistent while the foundational libraries mature.
 
+The Python package bundles a ready-to-edit sample. Run
+`liblogit.copy_sample_config(".")` to drop `logit.sample.json` into your
+project and tweak the fields below.
+
 ## Allowed Fields
 1. `level` — Severity settings. Accepts either a string threshold or an object containing `threshold` (string) and optional `tag` (boolean).
 2. `timestamp` — Boolean toggle controlling whether logs include time and date metadata.
@@ -34,4 +38,3 @@ No other keys are permitted at this stage; schema validation rejects additional 
 ## Failure Handling
 - When a configured file path cannot be created or opened, libLogit logs a warning and continues emitting messages to the console-only handler.
 - Socket destinations (`tcp://` and `udp://`) that fail to initialise also surface a warning and fall back to console output.
-
