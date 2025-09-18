@@ -15,6 +15,7 @@ This backlog translates the near-term checklist into actionable issues with clea
   - Draft schema structure (levels, outputs, rotation, remote settings).
   - Add validation utilities and unit tests in Python prototype.
   - Document schema usage in `docs/configuration.md`.
+- **Stories**: `CFG-01`, `CFG-02`.
 - **Owner**: _TBD_
 - **Dependencies**: None.
 
@@ -25,6 +26,7 @@ This backlog translates the near-term checklist into actionable issues with clea
   - Create package scaffolding (`liblogit/config.py`, `liblogit/sinks/__init__.py`, ...).
   - Update imports, packaging metadata, and entry points.
   - Add minimal automated tests to verify package import and logging bootstrap.
+- **Stories**: `PKG-01`, `PKG-02`.
 - **Owner**: _TBD_
 - **Dependencies**: Define Shared Configuration Contract.
 
@@ -35,6 +37,7 @@ This backlog translates the near-term checklist into actionable issues with clea
   - Implement sink abstractions and default implementations.
   - Ensure file sink supports rotation configuration placeholders (even if stubbed).
   - Provide sample config + docs verifying behavior.
+- **Stories**: `SINK-01`, `SINK-02`.
 - **Owner**: _TBD_
 - **Dependencies**: Define Shared Configuration Contract, Restructure Python Prototype.
 
@@ -77,3 +80,4 @@ This backlog translates the near-term checklist into actionable issues with clea
   - Define success metrics per language (e.g., sample app logging end-to-end).
 - **Owner**: _TBD_
 - **Dependencies**: Contribution & Governance Guide.
+

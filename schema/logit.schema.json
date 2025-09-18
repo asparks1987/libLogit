@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://liblogit.dev/schema/logit.schema.json",
+  "title": "libLogit Configuration",
+  "type": "object",
+  "required": [
+    "level",
+    "sinks"
+  ],
+  "properties": {
+    "level": {
+      "type": "string",
+      "enum": [
+        "trace",
+        "debug",
+        "info",
+        "warn",
+        "error",
+        "fatal"
+      ],
+      "description": "Minimum log level applied globally unless overridden on a sink."
+    },
+    "format": {
+      "type": "string",
+      "description": "Named formatter preset applied to sinks when not overridden."
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "include_process": {
+          "type": "boolean",
+          "default": true
+        },
+        "include_thread": {
+          "type": "boolean",
+          "default": false
+        },
+        "static": {
+          "type": "object",
+          "description": "Static key/value pairs appended to every log event.",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          }
+        }
+      }
+    },
+    "sinks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/sink"
+      }
+    }
+  },
+  "definitions": {
+    "sink": {
+      "type": "object",
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error",
+            "fatal"
+          ],
+          "description": "Override minimum level for this sink."
+        },
+        "options": {
+          "type": "object",
+          "description": "Sink-specific configuration map.",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
