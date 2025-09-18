@@ -1,3 +1,6 @@
+/**
+ * Minimal JVM binding around the shared JSON configuration.
+ */
 package dev.liblogit;
 
 import java.io.IOException;
@@ -20,6 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+/** Utility class housing static entry points for libLogit. */
 public final class LibLogIt {
     private static final Logger LOGGER = Logger.getLogger("liblogit");
     private static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
@@ -30,12 +34,14 @@ public final class LibLogIt {
     private LibLogIt() {
     }
 
+    /** Initialise logging from a JSON configuration file. */
     public static synchronized void initFromConfig(String path) throws IOException {
         String json = Files.readString(Path.of(path));
         config = Config.fromJson(json);
         configureLogger();
     }
 
+    /** Entry point mirroring the C++ LOG(level) helper. */
     public static synchronized LogBuilder LOG(String level) {
         ensureConfigured();
         return new LogBuilder(level);
@@ -134,6 +140,7 @@ public final class LibLogIt {
         }
     }
 
+    /** Streaming builder that buffers fragments before committing a message. */
     public static final class LogBuilder {
         private final String level;
         private final StringBuilder buffer = new StringBuilder();
@@ -177,6 +184,7 @@ public final class LibLogIt {
         return Objects.toString(value);
     }
 
+    /** Value object representing the subset of configuration fields consumed by the JVM binding. */
     private static final class Config {
         final String threshold;
         final boolean tagLevel;
@@ -287,6 +295,7 @@ public final class LibLogIt {
         }
     }
 
+    /** Minimal JSON parser to avoid external dependencies inside the sample binding. */
     private static final class SimpleJsonParser {
         static final Object NULL = new Object();
 
@@ -394,7 +403,8 @@ public final class LibLogIt {
 ');
                             break;
                         case 'r':
-                            builder.append('');
+                            builder.append('
+');
                             break;
                         case 't':
                             builder.append('	');

@@ -19,8 +19,13 @@
 
 namespace liblogit {
 
+/** Severity levels exposed to consumers of the logging API. */
 enum class Level { TRACE, DEBUG, INFO, WARN, ERROR, FATAL };
 
+/**
+ * Parsed configuration shared by all sinks.
+ * Only the fields defined in the phase-one JSON schema are represented here.
+ */
 struct Config {
     Level threshold = Level::INFO;
     bool tag_level = true;
@@ -28,13 +33,18 @@ struct Config {
     std::optional<std::string> file_location;
     std::optional<std::string> network_file_location;
 
+    /** Load configuration data from a JSON file residing at *path*. */
     static Config load_from_file(const std::filesystem::path& path);
 };
 
+/** Core logging façade that routes messages to configured sinks. */
 class Logger {
 public:
+    /** Replace the active logging configuration at runtime. */
     static void configure(const Config& config);
+    /** Convenience helper that loads configuration and then configures the logger. */
     static void configure_from_file(const std::filesystem::path& path);
+    /** Emit *message* at the requested *level* using all configured sinks. */
     static void emit(Level level, std::string_view message);
 
     static std::string level_to_string(Level level);
@@ -51,6 +61,7 @@ private:
     static inline bool configured_ = false;
 };
 
+/** Tiny RAII helper that mimics the LOG(level) << streaming syntax. */
 class LogMessage {
 public:
     explicit LogMessage(Level level) : level_(level) {}

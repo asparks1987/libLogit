@@ -6,7 +6,7 @@ setup(
     url='https://github.com/asparks1987/libLogit.git',
     author='Aryn M. Sparks',
     author_email='Aryn.sparks1987@gmail.com',
-    description='A simple logging library in python',
+    description='JSON-configured multi-sink logging helpers',
     packages=find_packages(include=['liblogit', 'liblogit.*']),    
     install_requires=[],
     python_requires='>=3.9',

@@ -1,3 +1,4 @@
+--  Implementation of the minimal Ada binding for libLogit.
 with Ada.Calendar;
 with Ada.Calendar.Formatting;
 with Ada.Characters.Handling;

@@ -30,3 +30,8 @@ No other keys are permitted at this stage; schema validation rejects additional 
 - Expand network support to include protocol-based endpoints (HTTP, TCP) while retaining backwards compatibility.
 - Introduce optional rotation and buffering settings once the baseline sinks are stable.
 - Support environment variable interpolation for secrets and deployment-specific overrides.
+
+## Failure Handling
+- When a configured file path cannot be created or opened, libLogit logs a warning and continues emitting messages to the console-only handler.
+- Socket destinations (`tcp://` and `udp://`) that fail to initialise also surface a warning and fall back to console output.
+

@@ -44,10 +44,11 @@ Refer to `docs/burndown.md` and `docs/issue-backlog.md` for the broader multi-ph
 - `timestamp` (boolean): include ISO-8601 timestamp when true.
 - `file_location` (string or null): append-only file path; omitted/null disables file logging.
 - `network_file_location` (string or null): optional secondary path (e.g., network share). Future work will expand this to remote transports.
+- Fallback behaviour: if the configured file or network destinations cannot be reached during initialisation, libLogit logs a warning and continues with console-only output.
 
 ## Python Quick Start
 ```python
-from libLogit import init_from_config, LOG, ENDL
+from liblogit import init_from_config, LOG, ENDL
 
 init_from_config("logit.json")
 LOG("info") << "Boot sequence started" << ENDL

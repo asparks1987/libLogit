@@ -1,3 +1,4 @@
+--  Ada binding for the libLogit JSON configuration.
 with Ada.Strings.Unbounded;
 
 package LibLogit is
@@ -13,7 +14,9 @@ package LibLogit is
       Has_Network : Boolean := False;
    end record;
 
+   --  Load configuration data from the JSON file located at Path.
    procedure Initialize (Path : String);
+   --  Emit Message at the requested Level using configured sinks.
    procedure Log_Message (Level : Log_Level; Message : String);
 
 private
