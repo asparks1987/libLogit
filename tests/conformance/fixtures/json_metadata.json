@@ -1,0 +1,34 @@
+{
+  "name": "json_metadata",
+  "description": "JSON-lines output includes logger, level, message, and metadata.",
+  "config": {
+    "version": "0.2",
+    "defaults": {
+      "level": "info",
+      "timestamp": false,
+      "tag_level": true,
+      "format": "json",
+      "sinks": ["file"]
+    },
+    "logits": {
+      "AuditLog": {
+        "path": "audit.jsonl",
+        "metadata": {
+          "component": "audit"
+        }
+      }
+    }
+  },
+  "messages": [
+    {
+      "logger": "AuditLog",
+      "level": "info",
+      "fragments": ["user signed in"]
+    }
+  ],
+  "expected_files": {
+    "audit.jsonl": [
+      "{\"level\":\"info\",\"logger\":\"AuditLog\",\"message\":\"user signed in\",\"metadata\":{\"component\":\"audit\"}}"
+    ]
+  }
+}

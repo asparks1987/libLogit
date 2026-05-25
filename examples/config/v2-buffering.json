@@ -1,0 +1,18 @@
+{
+  "version": "0.2",
+  "defaults": {
+    "level": "debug",
+    "timestamp": false,
+    "sinks": ["file"],
+    "buffering": {
+      "mode": "async",
+      "capacity": 25,
+      "flushIntervalSeconds": 1.0
+    }
+  },
+  "logits": {
+    "BufferedApp": {
+      "path": "logs/buffered-app.log"
+    }
+  }
+}

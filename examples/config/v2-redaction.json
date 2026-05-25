@@ -1,0 +1,22 @@
+{
+  "version": "0.2",
+  "defaults": {
+    "level": "debug",
+    "timestamp": false,
+    "format": "json",
+    "sinks": ["console", "file"],
+    "redaction": {
+      "mask": "[MASKED]",
+      "keys": ["password", "secret", "token"],
+      "patterns": ["(?i)api[_-]?key=[^\\s&]+"]
+    }
+  },
+  "logits": {
+    "SecureApp": {
+      "path": "logs/secure-app.jsonl",
+      "metadata": {
+        "component": "auth"
+      }
+    }
+  }
+}

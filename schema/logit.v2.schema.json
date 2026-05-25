@@ -1,0 +1,321 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://liblogit.dev/schema/logit.v2.schema.json",
+  "title": "libLogit Named LOGIT Configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["logits"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "0.2"
+    },
+    "defaults": {
+      "$ref": "#/$defs/logit"
+    },
+    "logits": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/logit"
+      }
+    }
+  },
+  "$defs": {
+    "level": {
+      "type": "string",
+      "enum": ["trace", "debug", "info", "warn", "warning", "error", "fatal"]
+    },
+    "pathMode": {
+      "type": "string",
+      "enum": ["file", "directory"],
+      "default": "file"
+    },
+    "logit": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "localPath": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "local_path": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "file_location": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "pathMode": {
+          "$ref": "#/$defs/pathMode"
+        },
+        "path_mode": {
+          "$ref": "#/$defs/pathMode"
+        },
+        "remotePath": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "remote_path": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "network_path": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "network_file_location": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "databasePath": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "database_path": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "database_location": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "level": {
+          "$ref": "#/$defs/level"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "sinks": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["console", "file", "network", "database"]
+          }
+        },
+        "timestamp": {
+          "type": "boolean",
+          "default": true
+        },
+        "tag_level": {
+          "type": "boolean",
+          "default": true
+        },
+        "format": {
+          "type": "string",
+          "enum": ["text", "json"],
+          "default": "text"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "redaction": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mask": {
+              "type": "string",
+              "minLength": 1,
+              "default": "[REDACTED]"
+            },
+            "keys": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "patterns": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "buffering": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["sync", "async", "buffered", "batch"],
+              "default": "sync"
+            },
+            "capacity": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 100
+            },
+            "batchSize": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "batch_size": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "flushIntervalSeconds": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "default": 1.0
+            },
+            "flush_interval_seconds": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "intervalSeconds": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "interval_seconds": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
+        },
+        "failurePolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["warn", "drop", "raise", "retry", "fallback"],
+              "default": "warn"
+            },
+            "retryAttempts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "retry_attempts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "retryDelaySeconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "retry_delay_seconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "fallbackPath": {
+              "type": "string",
+              "minLength": 1
+            },
+            "fallback_path": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "failure_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["warn", "drop", "raise", "retry", "fallback"],
+              "default": "warn"
+            },
+            "retryAttempts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "retry_attempts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "retryDelaySeconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "retry_delay_seconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "fallbackPath": {
+              "type": "string",
+              "minLength": 1
+            },
+            "fallback_path": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "retention": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["records", "age", "bytes", "bounded"]
+            },
+            "maxRecords": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "max_records": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxAgeSeconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "max_age_seconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxBytes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "max_bytes": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "rotation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "maxBytes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "max_bytes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxFiles": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "max_files": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}

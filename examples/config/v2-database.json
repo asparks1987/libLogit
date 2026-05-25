@@ -1,0 +1,22 @@
+{
+  "version": "0.2",
+  "defaults": {
+    "level": "debug",
+    "timestamp": true,
+    "tag_level": true,
+    "format": "text",
+    "sinks": ["console", "database"],
+    "retention": {
+      "mode": "records",
+      "maxRecords": 1000
+    }
+  },
+  "logits": {
+    "AppLog": {
+      "databasePath": "logs/app-logit.sqlite",
+      "metadata": {
+        "component": "app"
+      }
+    }
+  }
+}

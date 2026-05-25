@@ -1,0 +1,13 @@
+{
+  "version": "0.2",
+  "defaults": {
+    "level": "info"
+  },
+  "logits": {
+    "AppLog": {
+      "path": "logs/app.log",
+      "level": "debug",
+      "surprise": true
+    }
+  }
+}

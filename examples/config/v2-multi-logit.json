@@ -1,0 +1,23 @@
+{
+  "version": "0.2",
+  "defaults": {
+    "level": "info",
+    "timestamp": false,
+    "tag_level": true,
+    "format": "text",
+    "sinks": ["file"]
+  },
+  "logits": {
+    "AppLog": {
+      "path": "logs/app.log",
+      "level": "debug"
+    },
+    "AuditLog": {
+      "path": "logs/audit.jsonl",
+      "format": "json",
+      "metadata": {
+        "component": "audit"
+      }
+    }
+  }
+}

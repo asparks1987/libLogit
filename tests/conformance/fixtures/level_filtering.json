@@ -1,0 +1,34 @@
+{
+  "name": "level_filtering",
+  "description": "Messages below threshold are dropped.",
+  "config": {
+    "version": "0.2",
+    "defaults": {
+      "level": "info",
+      "timestamp": false,
+      "tag_level": true,
+      "format": "text",
+      "sinks": ["file"]
+    },
+    "logits": {
+      "AppLog": {
+        "path": "filtered.log"
+      }
+    }
+  },
+  "messages": [
+    {
+      "logger": "AppLog",
+      "level": "debug",
+      "fragments": ["hidden"]
+    },
+    {
+      "logger": "AppLog",
+      "level": "warn",
+      "fragments": ["visible"]
+    }
+  ],
+  "expected_files": {
+    "filtered.log": ["WARNING visible"]
+  }
+}

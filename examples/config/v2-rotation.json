@@ -1,0 +1,19 @@
+{
+  "version": "0.2",
+  "defaults": {
+    "level": "debug",
+    "timestamp": false,
+    "tag_level": true,
+    "format": "text",
+    "sinks": ["file"],
+    "rotation": {
+      "maxBytes": 4096,
+      "maxFiles": 3
+    }
+  },
+  "logits": {
+    "RotatingLog": {
+      "path": "logs/rotating.log"
+    }
+  }
+}

@@ -1,0 +1,17 @@
+# Python and package build output
+__pycache__/
+.pytest_cache/
+build/
+dist/
+*.egg-info/
+
+# Language and native build output
+target/
+bin/
+obj/
+CMakeFiles/
+CMakeCache.txt
+cmake-build-*/
+
+# Generated local log output
+logs/

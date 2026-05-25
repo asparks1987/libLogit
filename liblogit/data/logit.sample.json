@@ -1,9 +1,29 @@
 {
-  "level": {
-    "threshold": "info",
-    "tag": true
+  "version": "0.2",
+  "defaults": {
+    "level": "info",
+    "timestamp": true,
+    "tag_level": true,
+    "format": "text",
+    "sinks": ["console"],
+    "redaction": {
+      "keys": ["password", "secret", "token"],
+      "patterns": ["(?i)api[_-]?key=[^\\s&]+"]
+    },
+    "failurePolicy": {
+      "mode": "warn"
+    }
   },
-  "timestamp": true,
-  "file_location": "logs/app.log",
-  "network_file_location": null
+  "logits": {
+    "AppLog": {
+      "path": "logs/app.log",
+      "databasePath": "logs/app-logit.sqlite",
+      "level": "debug",
+      "sinks": ["console", "file", "database"],
+      "retention": {
+        "mode": "records",
+        "maxRecords": 10000
+      }
+    }
+  }
 }

@@ -1,0 +1,9 @@
+{
+  "level": {
+    "threshold": "info",
+    "tag": true
+  },
+  "timestamp": true,
+  "file_location": "logs/app.log",
+  "network_file_location": null
+}

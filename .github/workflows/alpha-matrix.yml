@@ -1,0 +1,391 @@
+name: Alpha Matrix
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  schema:
+    name: Schema and config examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate JSON schemas and examples
+        run: |
+          python -m pip install --upgrade pip jsonschema
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from jsonschema import ValidationError
+          from jsonschema.validators import validator_for
+
+          root = Path.cwd()
+          schema_paths = {
+              "v1": root / "schema" / "logit.v1.schema.json",
+              "v2": root / "schema" / "logit.v2.schema.json",
+          }
+          validators = {}
+          for name, path in schema_paths.items():
+              schema = json.loads(path.read_text(encoding="utf-8"))
+              cls = validator_for(schema)
+              cls.check_schema(schema)
+              validators[name] = cls(schema)
+
+          examples = root / "examples" / "config"
+          validators["v1"].validate(json.loads((examples / "v1-legacy.json").read_text(encoding="utf-8")))
+          for example in [
+              "v2-basic.json",
+              "v2-database.json",
+              "v2-directory-path.json",
+              "v2-multi-logit.json",
+          ]:
+              validators["v2"].validate(json.loads((examples / example).read_text(encoding="utf-8")))
+
+          try:
+              validators["v2"].validate(json.loads((examples / "invalid-extra-key.json").read_text(encoding="utf-8")))
+          except ValidationError:
+              pass
+          else:
+              raise SystemExit("invalid-extra-key.json unexpectedly validated")
+          PY
+
+  static:
+    name: Static checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install static dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Run Python static checks
+        run: |
+          python -m compileall -q liblogit tests
+          python -m ruff check liblogit tests
+          python -m mypy --explicit-package-bases liblogit tests
+      - name: Check whitespace
+        run: git diff --check -- .
+      - name: Validate JSON schemas and examples
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from jsonschema import ValidationError
+          from jsonschema.validators import validator_for
+
+          root = Path.cwd()
+          schema_paths = {
+              "v1": root / "schema" / "logit.v1.schema.json",
+              "v2": root / "schema" / "logit.v2.schema.json",
+          }
+          validators = {}
+          for name, path in schema_paths.items():
+              schema = json.loads(path.read_text(encoding="utf-8"))
+              cls = validator_for(schema)
+              cls.check_schema(schema)
+              validators[name] = cls(schema)
+
+          examples = root / "examples" / "config"
+          validators["v1"].validate(json.loads((examples / "v1-legacy.json").read_text(encoding="utf-8")))
+          for example in [
+              "v2-basic.json",
+              "v2-database.json",
+              "v2-directory-path.json",
+              "v2-multi-logit.json",
+          ]:
+              validators["v2"].validate(json.loads((examples / example).read_text(encoding="utf-8")))
+          validators["v2"].validate(json.loads((root / "liblogit" / "data" / "logit.sample.json").read_text(encoding="utf-8")))
+          validators["v1"].validate(json.loads((root / "liblogit" / "data" / "logit.v1.sample.json").read_text(encoding="utf-8")))
+          for fixture_path in sorted((root / "tests" / "conformance" / "fixtures").glob("*.json")):
+              validators["v2"].validate(json.loads(fixture_path.read_text(encoding="utf-8"))["config"])
+
+          try:
+              validators["v2"].validate(json.loads((examples / "invalid-extra-key.json").read_text(encoding="utf-8")))
+          except ValidationError:
+              pass
+          else:
+              raise SystemExit("invalid-extra-key.json unexpectedly validated")
+          PY
+      - name: Check native formatting
+        run: |
+          mapfile -t files < <(git ls-files \
+            'languages/**/*.c' \
+            'languages/**/*.h' \
+            'languages/**/*.hpp' \
+            'languages/**/*.cpp' \
+            'include/**/*.h' \
+            'include/**/*.hpp' \
+            'examples/**/*.c' \
+            'examples/**/*.cpp' \
+            'tests/**/*.c' \
+            'tests/**/*.cpp')
+          test "${#files[@]}" -gt 0
+          clang-format --dry-run --Werror "${files[@]}"
+
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run Python tests
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+          python -m pytest tests/test_python_logging.py tests/test_python_conformance.py tests/test_python_packaging.py
+      - name: Build and smoke-test Python package
+        run: |
+          python setup.py sdist bdist_wheel
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          wheel = next(Path("dist").glob("liblogit-*.whl"))
+          with ZipFile(wheel) as zf:
+              names = set(zf.namelist())
+              required = {
+                  "liblogit/py.typed",
+                  "liblogit/viewer.py",
+                  "liblogit/data/logit.sample.json",
+                  "liblogit/data/logit.v1.sample.json",
+                  "liblogit-0.1.0.data/data/share/liblogit/schema/logit.v2.schema.json",
+                  "liblogit-0.1.0.data/data/share/liblogit/examples/config/v2-database.json",
+                  "liblogit-0.1.0.data/data/share/liblogit/examples/config/v2-directory-path.json",
+                  "liblogit-0.1.0.dist-info/entry_points.txt",
+              }
+              missing = sorted(required - names)
+              if missing:
+                  raise SystemExit(f"missing wheel files: {missing}")
+              entry_points = zf.read("liblogit-0.1.0.dist-info/entry_points.txt").decode()
+              if "liblogit-viewer = liblogit.viewer:main" not in entry_points:
+                  raise SystemExit("missing liblogit-viewer console script")
+          PY
+          python -m pip install --no-index --find-links dist --target "$RUNNER_TEMP/liblogit-wheel" liblogit==0.1.0
+          (
+            cd "$RUNNER_TEMP"
+            PYTHONPATH="$RUNNER_TEMP/liblogit-wheel" python - <<'PY'
+          from importlib import metadata, resources
+          import liblogit
+          import liblogit.viewer
+
+          assert liblogit.__version__ == "0.1.0"
+          assert resources.files("liblogit").joinpath("py.typed").is_file()
+          assert resources.files("liblogit.data").joinpath("logit.sample.json").is_file()
+          scripts = {ep.name: ep.value for ep in metadata.entry_points(group="console_scripts")}
+          assert scripts.get("liblogit-viewer") == "liblogit.viewer:main"
+          PY
+          )
+
+  javascript:
+    name: JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Run JavaScript tests
+        working-directory: languages/javascript
+        run: npm test
+      - name: Validate npm package contents
+        working-directory: languages/javascript
+        run: npm pack --dry-run
+
+  csharp:
+    name: C#
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Run C# tests
+        run: dotnet run --project languages/csharp/LibLogit.Tests/LibLogit.Tests.csproj
+      - name: Build NuGet package
+        run: dotnet pack languages/csharp/LibLogit/LibLogit.csproj --configuration Release --output "$RUNNER_TEMP/nuget"
+
+  go:
+    name: Go
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.x"
+      - name: Run Go tests
+        working-directory: languages/go
+        run: go test ./...
+
+  java:
+    name: Java
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Compile and run Java tests
+        run: |
+          out="$RUNNER_TEMP/liblogit-java-check"
+          mkdir -p "$out"
+          javac -d "$out" \
+            languages/java/src/main/java/dev/liblogit/LibLogIt.java \
+            languages/java/src/main/java/dev/liblogit/Logit.java \
+            languages/java/src/test/java/dev/liblogit/LogitTest.java
+          java -cp "$out" dev.liblogit.LogitTest
+      - name: Build Maven package
+        working-directory: languages/java
+        run: mvn -B -DskipTests package
+
+  kotlin:
+    name: Kotlin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Install Kotlin compiler
+        run: |
+          version="2.3.21"
+          curl -fsSL "https://github.com/JetBrains/kotlin/releases/download/v${version}/kotlin-compiler-${version}.zip" -o "$RUNNER_TEMP/kotlin.zip"
+          unzip -q "$RUNNER_TEMP/kotlin.zip" -d "$RUNNER_TEMP/kotlin"
+          echo "$RUNNER_TEMP/kotlin/kotlinc/bin" >> "$GITHUB_PATH"
+      - name: Compile and run Kotlin tests
+        run: |
+          out="$RUNNER_TEMP/liblogit-kotlin-check"
+          mkdir -p "$out"
+          javac -d "$out" languages/java/src/main/java/dev/liblogit/Logit.java
+          kotlinc \
+            languages/kotlin/src/main/kotlin/dev/liblogit/LibLogItK.kt \
+            languages/kotlin/src/test/kotlin/dev/liblogit/LibLogItKTest.kt \
+            -classpath "$out" \
+            -d "$out"
+          kotlin -classpath "$out" dev.liblogit.LibLogItKTestKt
+      - name: Build Kotlin Maven package
+        run: |
+          (cd languages/java && mvn -B -DskipTests install)
+          (cd languages/kotlin && mvn -B -DskipTests package)
+
+  c:
+    name: C
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install C compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang
+      - name: Build and run C tests
+        run: |
+          clang -std=c17 -Wall -Wextra \
+            languages/c/liblogit.c \
+            languages/c/test_logit.c \
+            -o "$RUNNER_TEMP/liblogit-c-test"
+          "$RUNNER_TEMP/liblogit-c-test"
+
+  cpp:
+    name: C++
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install C++ dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang nlohmann-json3-dev
+      - name: Build and run C++ tests
+        run: |
+          clang++ -std=c++20 -Wall -Wextra \
+            languages/cpp/test_logit.cpp \
+            -o "$RUNNER_TEMP/liblogit-cpp-test"
+          "$RUNNER_TEMP/liblogit-cpp-test"
+
+  native-cmake:
+    name: Native CMake package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build nlohmann-json3-dev
+      - name: Configure, build, test, and install
+        run: |
+          cmake -S . -B "$RUNNER_TEMP/liblogit-build" \
+            -G Ninja \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/liblogit-build"
+          ctest --test-dir "$RUNNER_TEMP/liblogit-build" --output-on-failure
+          cmake --install "$RUNNER_TEMP/liblogit-build" --prefix "$RUNNER_TEMP/liblogit-install"
+      - name: Compile installed native examples
+        run: |
+          clang -std=c17 -Wall -Wextra \
+            -I "$RUNNER_TEMP/liblogit-install/include" \
+            examples/c/basic.c \
+            "$RUNNER_TEMP/liblogit-install/lib/liblogit.a" \
+            -o "$RUNNER_TEMP/liblogit-c-installed"
+          clang++ -std=c++20 -Wall -Wextra \
+            -I "$RUNNER_TEMP/liblogit-install/include" \
+            examples/cpp/basic.cpp \
+            -o "$RUNNER_TEMP/liblogit-cpp-installed"
+      - name: Verify CMake package consumption
+        run: |
+          consumer="$RUNNER_TEMP/liblogit-consumer"
+          mkdir -p "$consumer"
+          cat > "$consumer/CMakeLists.txt" <<'EOF'
+          cmake_minimum_required(VERSION 3.20)
+          project(liblogit_consumer LANGUAGES C CXX)
+          find_package(libLogit CONFIG REQUIRED)
+          add_executable(c_consumer c_consumer.c)
+          target_link_libraries(c_consumer PRIVATE libLogit::c)
+          add_executable(cpp_consumer cpp_consumer.cpp)
+          target_link_libraries(cpp_consumer PRIVATE libLogit::cpp)
+          EOF
+          cat > "$consumer/c_consumer.c" <<'EOF'
+          #include <liblogit/logit.h>
+          int main(void) {
+              liblogit_logit logit = liblogit_logit_default();
+              liblogit_logit_set_timestamp(&logit, 0);
+              return liblogit_logit_log(&logit, LIBLOGIT_INFO, "consumer c log");
+          }
+          EOF
+          cat > "$consumer/cpp_consumer.cpp" <<'EOF'
+          #include <liblogit/logit.hpp>
+          int main() {
+              liblogit::LOGIT logit;
+              logit.timestamp = false;
+              logit(liblogit::Level::INFO) << "consumer cpp log";
+              return 0;
+          }
+          EOF
+          cmake -S "$consumer" -B "$consumer/build" \
+            -G Ninja \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/liblogit-install"
+          cmake --build "$consumer/build"
+          "$consumer/build/c_consumer"
+          "$consumer/build/cpp_consumer"

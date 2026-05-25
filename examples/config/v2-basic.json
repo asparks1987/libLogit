@@ -1,0 +1,17 @@
+{
+  "version": "0.2",
+  "defaults": {
+    "level": "info",
+    "timestamp": true,
+    "tag_level": true,
+    "format": "text",
+    "sinks": ["console"]
+  },
+  "logits": {
+    "AppLog": {
+      "path": "logs/app.log",
+      "level": "debug",
+      "sinks": ["console", "file"]
+    }
+  }
+}

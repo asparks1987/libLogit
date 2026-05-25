@@ -1,0 +1,17 @@
+{
+  "version": "0.2",
+  "defaults": {
+    "level": "debug",
+    "timestamp": false,
+    "sinks": ["file"],
+    "failurePolicy": {
+      "mode": "fallback",
+      "fallbackPath": "logs/fallback.log"
+    }
+  },
+  "logits": {
+    "ResilientApp": {
+      "path": "logs/resilient-app.log"
+    }
+  }
+}

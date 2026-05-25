@@ -1,0 +1,36 @@
+{
+  "name": "@liblogit/liblogit",
+  "version": "0.1.0-alpha.0",
+  "description": "JSON-configured LOGIT logging object for JavaScript and Node.js",
+  "main": "src/liblogit.js",
+  "exports": {
+    ".": "./src/liblogit.js"
+  },
+  "type": "commonjs",
+  "files": [
+    "src",
+    "README.md",
+    "package.json"
+  ],
+  "scripts": {
+    "test": "node test/liblogit.test.js"
+  },
+  "keywords": ["logging", "logit", "json"],
+  "author": "Aryn M. Sparks",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/asparks1987/libLogit.git",
+    "directory": "languages/javascript"
+  },
+  "bugs": {
+    "url": "https://github.com/asparks1987/libLogit/issues"
+  },
+  "homepage": "https://github.com/asparks1987/libLogit#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

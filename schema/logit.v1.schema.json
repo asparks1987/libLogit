@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://liblogit.dev/schema/logit.v1.schema.json",
+  "title": "libLogit v0.1 Global Configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "level": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": ["trace", "debug", "info", "warn", "warning", "error", "fatal"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["threshold"],
+          "properties": {
+            "threshold": {
+              "type": "string",
+              "enum": ["trace", "debug", "info", "warn", "warning", "error", "fatal"]
+            },
+            "tag": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        }
+      ]
+    },
+    "timestamp": {
+      "type": "boolean",
+      "default": true
+    },
+    "file_location": {
+      "type": ["string", "null"]
+    },
+    "network_file_location": {
+      "type": ["string", "null"]
+    }
+  },
+  "required": ["level"],
+  "unevaluatedProperties": false
+}
