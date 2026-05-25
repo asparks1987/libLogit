@@ -1,6 +1,9 @@
 {
   "name": "level_filtering",
   "description": "Messages below threshold are dropped.",
+  "clock": {
+    "fixed_at": "2026-01-02T03:04:05Z"
+  },
   "config": {
     "version": "0.2",
     "defaults": {

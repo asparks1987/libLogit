@@ -8,4 +8,5 @@ recursive-include schema *.json
 recursive-include spec *.md
 recursive-include examples *.c *.cpp *.cs *.csproj *.go *.java *.js *.json *.kt *.md *.py
 recursive-include liblogit/data *.json
+recursive-include scripts *.ps1 *.py *.js
 recursive-include tests *.py *.json *.md

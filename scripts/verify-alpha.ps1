@@ -54,6 +54,21 @@ function Invoke-AlphaStep {
     & $Command
 }
 
+function Invoke-CheckedNative {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+
+        [Parameter(Mandatory = $true)]
+        [scriptblock]$Command
+    )
+
+    & $Command
+    if ($LASTEXITCODE -ne 0) {
+        throw "$Name failed with exit code $LASTEXITCODE."
+    }
+}
+
 function New-AlphaTempDirectory {
     $path = Join-Path ([IO.Path]::GetTempPath()) ("liblogit-alpha-" + [Guid]::NewGuid().ToString("N"))
     New-Item -ItemType Directory -Path $path -Force | Out-Null
@@ -78,12 +93,14 @@ Invoke-AlphaStep "Python tests" {
     $pytestTemp = New-AlphaTempDirectory
     $pytestCache = New-AlphaTempDirectory
     try {
-        & $Python -m pytest `
-            tests/test_python_logging.py `
-            tests/test_python_conformance.py `
-            tests/test_python_packaging.py `
-            --basetemp $pytestTemp `
-            -o "cache_dir=$pytestCache"
+        Invoke-CheckedNative "Python tests" {
+            & $Python -m pytest `
+                tests/test_python_logging.py `
+                tests/test_python_conformance.py `
+                tests/test_python_packaging.py `
+                --basetemp $pytestTemp `
+                -o "cache_dir=$pytestCache"
+        }
     }
     finally {
         Remove-AlphaTempDirectory $pytestTemp
@@ -92,28 +109,51 @@ Invoke-AlphaStep "Python tests" {
 }
 
 Invoke-AlphaStep "Static checks" {
-    powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-static.ps1
+    Invoke-CheckedNative "Static checks" {
+        powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-static.ps1
+    }
 }
 
 Invoke-AlphaStep "JavaScript tests" {
-    Push-Location languages/javascript
     $npmCache = New-AlphaTempDirectory
     try {
-        node test/liblogit.test.js
+        Push-Location languages/javascript
+        try {
+            Invoke-CheckedNative "JavaScript tests" {
+                node test/liblogit.test.js
+            }
+        }
+        finally {
+            Pop-Location
+        }
         $npmCommand = if ($env:OS -eq "Windows_NT") { "npm.cmd" } else { "npm" }
-        & $npmCommand pack --dry-run --cache $npmCache
+        Push-Location languages/javascript
+        try {
+            Invoke-CheckedNative "npm pack dry run" {
+                & $npmCommand pack --dry-run --cache $npmCache
+            }
+        }
+        finally {
+            Pop-Location
+        }
+        Invoke-CheckedNative "JavaScript installed package smoke" {
+            node scripts/verify-javascript-package-smoke.js languages/javascript
+        }
     }
     finally {
         Remove-AlphaTempDirectory $npmCache
-        Pop-Location
     }
 }
 
 Invoke-AlphaStep "C# tests" {
-    dotnet run --project languages/csharp/LibLogit.Tests/LibLogit.Tests.csproj
+    Invoke-CheckedNative "C# tests" {
+        dotnet run --project languages/csharp/LibLogit.Tests/LibLogit.Tests.csproj
+    }
     $nugetOut = New-AlphaTempDirectory
     try {
-        dotnet pack languages/csharp/LibLogit/LibLogit.csproj --configuration Release --output $nugetOut
+        Invoke-CheckedNative "C# NuGet pack" {
+            dotnet pack languages/csharp/LibLogit/LibLogit.csproj --configuration Release --output $nugetOut
+        }
     }
     finally {
         Remove-AlphaTempDirectory $nugetOut
@@ -123,7 +163,9 @@ Invoke-AlphaStep "C# tests" {
 Invoke-AlphaStep "Go tests" {
     Push-Location languages/go
     try {
-        go test ./...
+        Invoke-CheckedNative "Go tests" {
+            go test ./...
+        }
     }
     finally {
         Pop-Location
@@ -133,14 +175,20 @@ Invoke-AlphaStep "Go tests" {
 Invoke-AlphaStep "Java tests" {
     $out = New-AlphaTempDirectory
     try {
-        javac -d $out `
-            languages/java/src/main/java/dev/liblogit/LibLogIt.java `
-            languages/java/src/main/java/dev/liblogit/Logit.java `
-            languages/java/src/test/java/dev/liblogit/LogitTest.java
-        java -cp $out dev.liblogit.LogitTest
+        Invoke-CheckedNative "Java compile" {
+            javac -d $out `
+                languages/java/src/main/java/dev/liblogit/LibLogIt.java `
+                languages/java/src/main/java/dev/liblogit/Logit.java `
+                languages/java/src/test/java/dev/liblogit/LogitTest.java
+        }
+        Invoke-CheckedNative "Java tests" {
+            java -cp $out dev.liblogit.LogitTest
+        }
         Push-Location languages/java
         try {
-            mvn -B -DskipTests install
+            Invoke-CheckedNative "Java Maven install" {
+                mvn -B -DskipTests install
+            }
         }
         finally {
             Pop-Location
@@ -154,16 +202,24 @@ Invoke-AlphaStep "Java tests" {
 Invoke-AlphaStep "Kotlin tests" {
     $out = New-AlphaTempDirectory
     try {
-        javac -d $out languages/java/src/main/java/dev/liblogit/Logit.java
-        kotlinc `
-            languages/kotlin/src/main/kotlin/dev/liblogit/LibLogItK.kt `
-            languages/kotlin/src/test/kotlin/dev/liblogit/LibLogItKTest.kt `
-            -classpath $out `
-            -d $out
-        kotlin -classpath $out dev.liblogit.LibLogItKTestKt
+        Invoke-CheckedNative "Kotlin Java dependency compile" {
+            javac -d $out languages/java/src/main/java/dev/liblogit/Logit.java
+        }
+        Invoke-CheckedNative "Kotlin compile" {
+            kotlinc `
+                languages/kotlin/src/main/kotlin/dev/liblogit/LibLogItK.kt `
+                languages/kotlin/src/test/kotlin/dev/liblogit/LibLogItKTest.kt `
+                -classpath $out `
+                -d $out
+        }
+        Invoke-CheckedNative "Kotlin tests" {
+            kotlin -classpath $out dev.liblogit.LibLogItKTestKt
+        }
         Push-Location languages/kotlin
         try {
-            mvn -B -DskipTests package
+            Invoke-CheckedNative "Kotlin Maven package" {
+                mvn -B -DskipTests package
+            }
         }
         finally {
             Pop-Location
@@ -177,8 +233,12 @@ Invoke-AlphaStep "Kotlin tests" {
 Invoke-AlphaStep "C tests" {
     $out = Join-Path ([IO.Path]::GetTempPath()) ("liblogit-c-test-" + [Guid]::NewGuid().ToString("N") + ".exe")
     try {
-        clang -std=c17 -Wall -Wextra languages/c/liblogit.c languages/c/test_logit.c -o $out
-        & $out
+        Invoke-CheckedNative "C compile" {
+            clang -std=c17 -Wall -Wextra languages/c/liblogit.c languages/c/test_logit.c -o $out
+        }
+        Invoke-CheckedNative "C tests" {
+            & $out
+        }
     }
     finally {
         if (Test-Path $out) {
@@ -195,8 +255,12 @@ Invoke-AlphaStep "C++ tests" {
         $includeArgs += "-I$vcpkgInclude"
     }
     try {
-        & clang++ -std=c++20 -Wall -Wextra @includeArgs languages/cpp/test_logit.cpp -o $out
-        & $out
+        Invoke-CheckedNative "C++ compile" {
+            & clang++ -std=c++20 -Wall -Wextra @includeArgs languages/cpp/test_logit.cpp -o $out
+        }
+        Invoke-CheckedNative "C++ tests" {
+            & $out
+        }
     }
     finally {
         if (Test-Path $out) {
@@ -213,19 +277,31 @@ Invoke-AlphaStep "Native CMake build, tests, and install" {
     $vcpkgRoot = Join-Path $env:USERPROFILE ".local\tools\vcpkg\installed\x64-windows"
     $vcpkgInclude = Join-Path $vcpkgRoot "include"
     try {
-        cmake -S $root -B $build `
-            -G Ninja `
-            -DCMAKE_C_COMPILER=clang `
-            -DCMAKE_CXX_COMPILER=clang++ `
-            "-DCMAKE_PREFIX_PATH=$vcpkgRoot"
-        cmake --build $build
-        ctest --test-dir $build --output-on-failure
-        cmake --install $build --prefix $install
+        Invoke-CheckedNative "Native CMake configure" {
+            cmake -S $root -B $build `
+                -G Ninja `
+                -DCMAKE_C_COMPILER=clang `
+                -DCMAKE_CXX_COMPILER=clang++ `
+                "-DCMAKE_PREFIX_PATH=$vcpkgRoot"
+        }
+        Invoke-CheckedNative "Native CMake build" {
+            cmake --build $build
+        }
+        Invoke-CheckedNative "Native CTest" {
+            ctest --test-dir $build --output-on-failure
+        }
+        Invoke-CheckedNative "Native CMake install" {
+            cmake --install $build --prefix $install
+        }
 
         $installedInclude = Join-Path $install "include"
         $installedLib = Join-Path $install "lib\logit.lib"
-        clang -std=c17 -Wall -Wextra -I $installedInclude examples/c/basic.c $installedLib -o $cExample
-        clang++ -std=c++20 -Wall -Wextra -I $installedInclude -I $vcpkgInclude examples/cpp/basic.cpp -o $cppExample
+        Invoke-CheckedNative "Installed C example compile" {
+            clang -std=c17 -Wall -Wextra -I $installedInclude examples/c/basic.c $installedLib -o $cExample
+        }
+        Invoke-CheckedNative "Installed C++ example compile" {
+            clang++ -std=c++20 -Wall -Wextra -I $installedInclude -I $vcpkgInclude examples/cpp/basic.cpp -o $cppExample
+        }
 
         $consumer = New-AlphaTempDirectory
         try {
@@ -257,14 +333,22 @@ int main() {
 }
 "@ | Set-Content -LiteralPath (Join-Path $consumer "cpp_consumer.cpp") -Encoding UTF8
 
-            cmake -S $consumer -B $consumerBuild `
-                -G Ninja `
-                -DCMAKE_C_COMPILER=clang `
-                -DCMAKE_CXX_COMPILER=clang++ `
-                "-DCMAKE_PREFIX_PATH=$install;$vcpkgRoot"
-            cmake --build $consumerBuild
-            & (Join-Path $consumerBuild "c_consumer.exe")
-            & (Join-Path $consumerBuild "cpp_consumer.exe")
+            Invoke-CheckedNative "Installed CMake consumer configure" {
+                cmake -S $consumer -B $consumerBuild `
+                    -G Ninja `
+                    -DCMAKE_C_COMPILER=clang `
+                    -DCMAKE_CXX_COMPILER=clang++ `
+                    "-DCMAKE_PREFIX_PATH=$install;$vcpkgRoot"
+            }
+            Invoke-CheckedNative "Installed CMake consumer build" {
+                cmake --build $consumerBuild
+            }
+            Invoke-CheckedNative "Installed C consumer run" {
+                & (Join-Path $consumerBuild "c_consumer.exe")
+            }
+            Invoke-CheckedNative "Installed C++ consumer run" {
+                & (Join-Path $consumerBuild "cpp_consumer.exe")
+            }
         }
         finally {
             Remove-AlphaTempDirectory $consumer

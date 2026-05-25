@@ -1,6 +1,9 @@
 {
   "name": "json_metadata",
   "description": "JSON-lines output includes logger, level, message, and metadata.",
+  "clock": {
+    "fixed_at": "2026-01-02T03:04:05Z"
+  },
   "config": {
     "version": "0.2",
     "defaults": {

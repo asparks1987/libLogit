@@ -522,7 +522,7 @@ on top of the same `logit_events` table that SQL tools can query.
 | C | Struct/function binding with CMake static library target | CMake, `ctest`, and installed consumer check |
 | C# | Managed Alpha binding with NuGet metadata | `dotnet run`, shared fixtures, and `dotnet pack` |
 | Java | JVM Alpha binding with Maven metadata | `javac`/`java`, shared fixtures, and `mvn package` |
-| JavaScript | Node Alpha binding with npm metadata | `node` shared fixtures and `npm pack --dry-run` |
+| JavaScript | Node Alpha binding with npm metadata | `node` shared fixtures, `npm pack --dry-run`, and installed-tarball smoke test |
 | Go | Go module Alpha binding | `go test ./...` and package docs |
 | Kotlin | JVM facade with verified Maven companion package | `kotlinc`/`kotlin` shared fixtures and `mvn package` after Java artifact install |
 

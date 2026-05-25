@@ -1,6 +1,7 @@
 """Python runner for shared libLogit conformance fixtures."""
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,34 @@ FIXTURE_DIR = Path(__file__).parent / "conformance" / "fixtures"
 
 def fixture_paths():
     return sorted(FIXTURE_DIR.glob("*.json"))
+
+
+@pytest.mark.parametrize("fixture_path", fixture_paths(), ids=lambda path: f"{path.stem}-contract")
+def test_conformance_fixture_contract(fixture_path):
+    fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+
+    assert isinstance(fixture.get("name"), str) and fixture["name"]
+    assert isinstance(fixture.get("description"), str) and fixture["description"]
+    assert isinstance(fixture.get("config"), dict)
+    assert isinstance(fixture.get("messages"), list)
+    assert isinstance(fixture.get("expected_files"), dict)
+
+    clock = fixture.get("clock")
+    assert isinstance(clock, dict)
+    fixed_at = clock.get("fixed_at")
+    assert isinstance(fixed_at, str) and fixed_at.endswith("Z")
+    datetime.fromisoformat(fixed_at.replace("Z", "+00:00"))
+
+    for message in fixture["messages"]:
+        assert isinstance(message.get("logger"), str) and message["logger"]
+        assert isinstance(message.get("level"), str) and message["level"]
+        assert isinstance(message.get("fragments"), list)
+        assert all(isinstance(fragment, str) for fragment in message["fragments"])
+
+    for relative_path, expected_lines in fixture["expected_files"].items():
+        assert isinstance(relative_path, str) and relative_path
+        assert isinstance(expected_lines, list)
+        assert all(isinstance(line, str) for line in expected_lines)
 
 
 @pytest.mark.parametrize("fixture_path", fixture_paths(), ids=lambda path: path.stem)

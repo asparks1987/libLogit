@@ -54,22 +54,122 @@ function Invoke-StaticStep {
 
 $Python = Resolve-LibLogitPython
 
+Invoke-StaticStep "PowerShell syntax check" {
+    $scripts = @(Get-ChildItem -Path scripts -Filter "*.ps1" -File | Sort-Object FullName)
+    if ($scripts.Count -eq 0) {
+        throw "No PowerShell scripts were found."
+    }
+
+    $parseFailures = [System.Collections.Generic.List[string]]::new()
+    foreach ($script in $scripts) {
+        $tokens = $null
+        $errors = $null
+        [System.Management.Automation.Language.Parser]::ParseFile(
+            $script.FullName,
+            [ref]$tokens,
+            [ref]$errors
+        ) | Out-Null
+
+        foreach ($parseError in @($errors)) {
+            $parseFailures.Add(
+                "$($script.FullName):$($parseError.Extent.StartLineNumber): $($parseError.Message)"
+            )
+        }
+    }
+
+    if ($parseFailures.Count -gt 0) {
+        $parseFailures | ForEach-Object { Write-Host $_ }
+        throw "PowerShell syntax check failed."
+    }
+}
+
+Invoke-StaticStep "JavaScript syntax check" {
+    $node = Get-Command node -ErrorAction SilentlyContinue
+    if (-not $node) {
+        throw "node was not found. Install Node.js or add node to PATH."
+    }
+
+    $scripts = @(
+        "scripts/verify-javascript-package-smoke.js",
+        "languages/javascript/src/liblogit.js",
+        "languages/javascript/test/liblogit.test.js"
+    )
+    foreach ($script in $scripts) {
+        & $node.Source --check $script
+        if ($LASTEXITCODE -ne 0) {
+            throw "JavaScript syntax check failed for $script."
+        }
+    }
+}
+
+Invoke-StaticStep "Hosted workflow release gate check" {
+    $workflowPath = ".github/workflows/alpha-matrix.yml"
+    $helperPath = "scripts/check-hosted-ci.ps1"
+    if (-not (Test-Path -LiteralPath $workflowPath)) {
+        throw "Hosted Alpha workflow was not found at $workflowPath."
+    }
+    if (-not (Test-Path -LiteralPath $helperPath)) {
+        throw "Hosted CI helper was not found at $helperPath."
+    }
+
+    $workflow = Get-Content -LiteralPath $workflowPath -Raw
+    $helper = Get-Content -LiteralPath $helperPath -Raw
+    $requiredJobs = @(
+        "Schema and config examples",
+        "Static checks",
+        "Python",
+        "JavaScript",
+        "C#",
+        "Go",
+        "Java",
+        "Kotlin",
+        "C",
+        "C++",
+        "Native CMake package"
+    )
+
+    foreach ($jobName in $requiredJobs) {
+        $escaped = [regex]::Escape($jobName)
+        if ($workflow -notmatch "(?m)^\s+name:\s+$escaped\s*$") {
+            throw "Hosted Alpha workflow is missing required job name '$jobName'."
+        }
+        if ($helper -notmatch [regex]::Escape("""$jobName""")) {
+            throw "Hosted CI helper is missing required job '$jobName'."
+        }
+    }
+
+    $requiredWorkflowText = @(
+        "actions/setup-node@v4",
+        "Check JavaScript syntax",
+        "node --check scripts/verify-javascript-package-smoke.js",
+        "node --check languages/javascript/src/liblogit.js",
+        "node --check languages/javascript/test/liblogit.test.js",
+        "python scripts/verify-python-wheel-smoke.py dist",
+        "node scripts/verify-javascript-package-smoke.js languages/javascript"
+    )
+    foreach ($text in $requiredWorkflowText) {
+        if (-not $workflow.Contains($text)) {
+            throw "Hosted Alpha workflow is missing release gate text: $text"
+        }
+    }
+}
+
 Invoke-StaticStep "Python syntax check" {
-    & $Python -m compileall -q liblogit tests
+    & $Python -m compileall -q liblogit tests scripts
     if ($LASTEXITCODE -ne 0) {
         throw "Python compileall failed."
     }
 }
 
 Invoke-StaticStep "Python lint check" {
-    & $Python -m ruff check liblogit tests
+    & $Python -m ruff check liblogit tests scripts
     if ($LASTEXITCODE -ne 0) {
         throw "ruff check failed."
     }
 }
 
 Invoke-StaticStep "Python type check" {
-    & $Python -m mypy --explicit-package-bases liblogit tests
+    & $Python -m mypy --explicit-package-bases liblogit tests scripts
     if ($LASTEXITCODE -ne 0) {
         throw "mypy check failed."
     }

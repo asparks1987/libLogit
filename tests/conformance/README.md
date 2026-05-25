@@ -19,15 +19,18 @@ Each fixture is JSON with:
 
 - `name`: stable fixture id.
 - `description`: human-readable goal.
+- `clock`: deterministic clock data for bindings that support injected clocks.
+  - `fixed_at`: UTC RFC 3339 instant used for any timestamp-enabled fixture.
 - `config`: config v2 payload using relative file paths.
 - `messages`: ordered log calls with logger, level, and fragments.
 - `expected_files`: expected file contents after all messages are committed.
 
-Bindings may adapt path separators internally, but rendered file contents must match exactly for fixtures with `timestamp` disabled.
+Bindings may adapt path separators internally, but rendered file contents must match exactly. Alpha fixtures currently keep `timestamp` disabled so every MVP binding can pass deterministically while still carrying the fixed-clock contract needed for timestamped golden fixtures.
 
 ## Required Alpha Fixture Behavior
 
 - Load config v2.
+- Parse the fixture `clock.fixed_at` value and preserve it for timestamp-enabled fixture support.
 - Apply defaults before object overrides.
 - Drop events below threshold.
 - Render text output as `LEVEL message` when `tag_level` is true and `timestamp` is false.

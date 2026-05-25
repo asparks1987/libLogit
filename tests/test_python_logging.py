@@ -282,6 +282,30 @@ def test_redaction_config_validates_rules(tmp_path):
         liblogit.LogitConfig(path=tmp_path / "events.log", redaction={"keys": ["token"], "mask": ""})
 
 
+def test_redaction_module_masks_nested_values_and_text():
+    from liblogit.redaction import redact_metadata, redact_text, redact_value
+
+    rules = {"mask": "***", "keys": ("password", "token"), "patterns": (r"secret=[^\s]+",)}
+
+    assert redact_value(
+        {
+            "Password": "open-sesame",
+            "nested": {"token": "abc-123"},
+            "items": [{"safe": "yes", "password": "hidden"}],
+        },
+        rules,
+    ) == {
+        "Password": "***",
+        "nested": {"token": "***"},
+        "items": [{"safe": "yes", "password": "***"}],
+    }
+    assert redact_text("value secret=abc", rules) == "value ***"
+    assert redact_metadata({"token": "event-token", "safe": "value"}, rules) == {
+        "safe": "value",
+        "token": "***",
+    }
+
+
 def test_sync_buffering_mode_writes_immediately(tmp_path):
     log_path = tmp_path / "sync.log"
     app_log = liblogit.LOGIT(

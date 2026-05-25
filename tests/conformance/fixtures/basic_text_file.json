@@ -1,6 +1,9 @@
 {
   "name": "basic_text_file",
   "description": "A text LOGIT writes console/file style output without timestamps.",
+  "clock": {
+    "fixed_at": "2026-01-02T03:04:05Z"
+  },
   "config": {
     "version": "0.2",
     "defaults": {

@@ -6,7 +6,7 @@
     <AssemblyName>LibLogit</AssemblyName>
     <RootNamespace>LibLogit</RootNamespace>
     <PackageId>LibLogit</PackageId>
-    <Version>0.1.0-alpha.0</Version>
+    <Version>1.0.0-alpha.1</Version>
     <Authors>Aryn M. Sparks</Authors>
     <Description>Alpha LOGIT logging object for .NET projects.</Description>
     <PackageTags>logging;logit;sdk;structured-logging</PackageTags>
